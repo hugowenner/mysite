@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HW | Hugo Wenner – Desenvolvedor Web Full Stack</title>
+  <meta name="description" content="Soluções digitais sob medida para negócios que exigem qualidade técnica, design estratégico e resultados reais. Web apps, sistemas e backends modernos.">
+  <meta name="keywords" content="desenvolvedor web, full stack, next.js, react, node.js, APIs, sistemas web">
+  <meta property="og:title" content="HW | Hugo Wenner – Desenvolvedor Web Full Stack">
+  <meta property="og:description" content="Transformando ideias complexas em produtos digitais escaláveis.">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: '#07070a',
+            'bg-elevated': '#0d0d12',
+            fg: '#ffffff',
+            muted: '#7a7a8c',
+            accent: '#00d4ff',
+            'accent-purple': '#a855f7',
+            card: 'rgba(255,255,255,0.02)',
+            border: 'rgba(255,255,255,0.08)',
+          },
+          fontFamily: {
+            display: ['Space Grotesk', 'sans-serif'],
+            body: ['Inter', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --bg: #07070a;
+      --bg-elevated: #0d0d12;
+      --fg: #ffffff;
+      --muted: #7a7a8c;
+      --accent: #00d4ff;
+      --accent-purple: #a855f7;
+      --card: rgba(255,255,255,0.02);
+      --border: rgba(255,255,255,0.08);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      overflow-x: hidden;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+
+    ::selection {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    .loader {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.6s ease, visibility 0.6s ease;
+    }
+    .loader.hidden { opacity: 0; visibility: hidden; }
+    .loader-logo {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 4rem;
+      font-weight: 700;
+      letter-spacing: -0.05em;
+      background: linear-gradient(135deg, var(--accent), var(--accent-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(0.98); }
+    }
+
+    .noise {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9998;
+      opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.35;
+      animation: float 25s ease-in-out infinite;
+    }
+    .orb-1 {
+      width: 700px;
+      height: 700px;
+      background: var(--accent);
+      top: -300px;
+      right: -250px;
+    }
+    .orb-2 {
+      width: 500px;
+      height: 500px;
+      background: var(--accent-purple);
+      bottom: -200px;
+      left: -200px;
+      animation-delay: -12s;
+    }
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      33% { transform: translate(40px, -40px) rotate(3deg); }
+      66% { transform: translate(-30px, 30px) rotate(-3deg); }
+    }
+
+    .grid-pattern {
+      position: absolute;
+      inset: 0;
+      background-image: 
+        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+      background-size: 80px 80px;
+      mask-image: radial-gradient(ellipse at center, black 0%, transparent 70%);
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(50px);
+      transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .reveal.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .stagger > * {
+      opacity: 0;
+      transform: translateY(35px);
+      transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .stagger.active > *:nth-child(1) { transition-delay: 0.05s; }
+    .stagger.active > *:nth-child(2) { transition-delay: 0.1s; }
+    .stagger.active > *:nth-child(3) { transition-delay: 0.15s; }
+    .stagger.active > *:nth-child(4) { transition-delay: 0.2s; }
+    .stagger.active > *:nth-child(5) { transition-delay: 0.25s; }
+    .stagger.active > *:nth-child(6) { transition-delay: 0.3s; }
+    .stagger.active > * { opacity: 1; transform: translateY(0); }
+
+    .btn-primary {
+      position: relative;
+      background: linear-gradient(135deg, var(--accent), var(--accent-purple));
+      padding: 1rem 2rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-family: 'Space Grotesk', sans-serif;
+      overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, var(--accent-purple), var(--accent));
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 25px 50px rgba(0, 212, 255, 0.25);
+    }
+    .btn-primary:hover::before { opacity: 1; }
+    .btn-primary span { position: relative; z-index: 1; }
+
+    .btn-secondary {
+      position: relative;
+      padding: 1rem 2rem;
+      border-radius: 8px;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: transparent;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    .btn-secondary:hover {
+      border-color: var(--accent);
+      background: rgba(0, 212, 255, 0.05);
+    }
+
+    .card-hover {
+      transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.3s ease;
+    }
+    .card-hover:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 40px 80px rgba(0, 0, 0, 0.4);
+      border-color: var(--accent);
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.02);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .text-gradient {
+      background: linear-gradient(135deg, var(--accent), var(--accent-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+    }
+
+    .quote-mark {
+      font-size: 6rem;
+      line-height: 1;
+      opacity: 0.1;
+      font-family: Georgia, serif;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="noise"></div>
+
+  <!-- Loading Screen -->
+  <div class="loader" id="loader">
+    <div class="loader-logo">HW</div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="fixed top-0 left-0 right-0 z-50 glass" id="navbar">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="#" class="font-display text-2xl font-bold tracking-tight">
+        <span class="text-gradient">HW</span>
+      </a>
+      <div class="hidden md:flex items-center gap-8">
+        <a href="#solucoes" class="text-sm text-muted hover:text-fg transition-colors">Soluções</a>
+        <a href="#expertise" class="text-sm text-muted hover:text-fg transition-colors">Expertise</a>
+        <a href="#pacotes" class="text-sm text-muted hover:text-fg transition-colors">Pacotes</a>
+        <a href="#contato" class="btn-primary text-sm">
+          <span>Iniciar Projeto</span>
+        </a>
+      </div>
+      <button class="md:hidden text-fg" id="menuBtn" aria-label="Menu">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="md:hidden hidden" id="mobileMenu">
+      <div class="px-6 py-4 border-t border-border flex flex-col gap-4 glass">
+        <a href="#solucoes" class="text-sm text-muted hover:text-fg transition-colors">Soluções</a>
+        <a href="#expertise" class="text-sm text-muted hover:text-fg transition-colors">Expertise</a>
+        <a href="#pacotes" class="text-sm text-muted hover:text-fg transition-colors">Pacotes</a>
+        <a href="#contato" class="btn-primary text-sm text-center"><span>Iniciar Projeto</span></a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="relative min-h-screen flex items-center justify-center overflow-hidden" id="hero">
+    <div class="absolute inset-0 pointer-events-none">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="grid-pattern"></div>
+    </div>
+    <canvas id="particles" class="absolute inset-0 pointer-events-none"></canvas>
+
+    <div class="relative z-10 max-w-5xl mx-auto px-6 text-center pt-20">
+      <div class="stagger" id="heroContent">
+        <p class="text-accent font-medium tracking-widest uppercase text-sm mb-6">Hugo Wenner – Full Stack Developer</p>
+        <h1 class="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-none tracking-tight mb-8">
+          Transformando ideias<br>
+          <span class="text-gradient">complexas</span> em produtos<br>
+          digitais escaláveis.
+        </h1>
+        <p class="text-lg md:text-xl text-muted max-w-2xl mx-auto mb-12 font-light leading-relaxed">
+          Desenvolvimento de web apps, sistemas e backends modernos com foco em performance, segurança e crescimento sustentável.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="#contato" class="btn-primary magnetic">
+            <span>Iniciar Projeto</span>
+          </a>
+          <a href="#solucoes" class="btn-secondary magnetic">
+            Ver Soluções
+          </a>
+        </div>
+      </div>
+
+      <div class="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-40">
+        <span class="text-xs tracking-widest uppercase">Scroll</span>
+        <div class="w-px h-12 bg-gradient-to-b from-fg to-transparent"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Posicionamento Section -->
+  <section class="relative py-24 overflow-hidden" id="posicionamento">
+    <div class="max-w-4xl mx-auto px-6">
+      <div class="reveal text-center">
+        <div class="glass rounded-3xl p-10 md:p-16 border border-border relative overflow-hidden">
+          <div class="absolute top-8 left-8 text-accent opacity-20">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
+            </svg>
+          </div>
+          <p class="text-xl md:text-2xl lg:text-3xl font-light leading-relaxed text-fg/90">
+            Não entrego apenas sites.<br>
+            Crio <span class="text-gradient font-medium">soluções digitais sob medida</span>, pensadas para negócios que exigem qualidade técnica, design estratégico e resultados reais.
+          </p>
+          <div class="mt-8 pt-8 border-t border-border">
+            <p class="text-muted text-lg">
+              Cada projeto é tratado como um <span class="text-fg font-medium">produto</span> — não como um template.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Solutions Section -->
+  <section class="relative py-32 bg-bg-elevated" id="solucoes">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="reveal mb-20">
+        <p class="text-accent font-medium tracking-widest uppercase text-sm mb-4">Soluções</p>
+        <h2 class="font-display text-4xl md:text-5xl font-bold tracking-tight">
+          Produtos digitais<br>
+          <span class="text-gradient">sob medida</span>
+        </h2>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 stagger" id="solutionCards">
+        <!-- Solution 1 -->
+        <div class="glass rounded-2xl p-8 card-hover border border-border group cursor-pointer">
+          <div class="flex items-start justify-between mb-6">
+            <span class="text-6xl font-display font-bold text-border group-hover:text-accent/20 transition-colors">01</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-muted group-hover:text-accent transition-colors group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300">
+              <line x1="7" y1="17" x2="17" y2="7"></line>
+              <polyline points="7 7 17 7 17 17"></polyline>
+            </svg>
+          </div>
+          <h3 class="font-display text-2xl font-semibold mb-4">Sites Institucionais Premium</h3>
+          <p class="text-muted leading-relaxed">Presença digital profissional, rápida e elegante. Arquitetura moderna, SEO sólido e design que transmite confiança desde o primeiro acesso.</p>
+        </div>
+
+        <!-- Solution 2 -->
+        <div class="glass rounded-2xl p-8 card-hover border border-border group cursor-pointer">
+          <div class="flex items-start justify-between mb-6">
+            <span class="text-6xl font-display font-bold text-border group-hover:text-accent/20 transition-colors">02</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-muted group-hover:text-accent transition-colors group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300">
+              <line x1="7" y1="17" x2="17" y2="7"></line>
+              <polyline points="7 7 17 7 17 17"></polyline>
+            </svg>
+          </div>
+          <h3 class="font-display text-2xl font-semibold mb-4">Landing Pages de Alta Conversão</h3>
+          <p class="text-muted leading-relaxed">Páginas criadas para converter visitantes em clientes. Copy estratégica, performance otimizada e experiência fluida em qualquer dispositivo.</p>
+        </div>
+
+        <!-- Solution 3 -->
+        <div class="glass rounded-2xl p-8 card-hover border border-border group cursor-pointer">
+          <div class="flex items-start justify-between mb-6">
+            <span class="text-6xl font-display font-bold text-border group-hover:text-accent/20 transition-colors">03</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-muted group-hover:text-accent transition-colors group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300">
+              <line x1="7" y1="17" x2="17" y2="7"></line>
+              <polyline points="7 7 17 7 17 17"></polyline>
+            </svg>
+          </div>
+          <h3 class="font-display text-2xl font-semibold mb-4">Sistemas Web Sob Medida</h3>
+          <p class="text-muted leading-relaxed">Soluções completas com login, painel administrativo e banco de dados. Pensadas para escalar junto com o seu negócio.</p>
+        </div>
+
+        <!-- Solution 4 -->
+        <div class="glass rounded-2xl p-8 card-hover border border-border group cursor-pointer">
+          <div class="flex items-start justify-between mb-6">
+            <span class="text-6xl font-display font-bold text-border group-hover:text-accent/20 transition-colors">04</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-muted group-hover:text-accent transition-colors group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300">
+              <line x1="7" y1="17" x2="17" y2="7"></line>
+              <polyline points="7 7 17 7 17 17"></polyline>
+            </svg>
+          </div>
+          <h3 class="font-display text-2xl font-semibold mb-4">Dashboards & Painéis Administrativos</h3>
+          <p class="text-muted leading-relaxed">Visualização clara de dados, relatórios e métricas. Decisões melhores começam com informações bem apresentadas.</p>
+        </div>
+
+        <!-- Solution 5 -->
+        <div class="glass rounded-2xl p-8 card-hover border border-border group cursor-pointer md:col-span-2 lg:col-span-2">
+          <div class="flex items-start justify-between mb-6">
+            <span class="text-6xl font-display font-bold text-border group-hover:text-accent/20 transition-colors">05</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-muted group-hover:text-accent transition-colors group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform duration-300">
+              <line x1="7" y1="17" x2="17" y2="7"></line>
+              <polyline points="7 7 17 7 17 17"></polyline>
+            </svg>
+          </div>
+          <h3 class="font-display text-2xl font-semibold mb-4">APIs & Backends Escaláveis</h3>
+          <p class="text-muted leading-relaxed">Arquitetura segura, organizada e preparada para integrações. Node.js, Python, REST APIs e bancos de dados robustos.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Expertise Section -->
+  <section class="relative py-32 overflow-hidden" id="expertise">
+    <div class="absolute inset-0 pointer-events-none">
+      <div class="orb orb-1" style="top: 20%; right: -400px;"></div>
+    </div>
+    
+    <div class="max-w-7xl mx-auto px-6 relative z-10">
+      <div class="reveal mb-20">
+        <p class="text-accent font-medium tracking-widest uppercase text-sm mb-4">Expertise</p>
+        <h2 class="font-display text-4xl md:text-5xl font-bold tracking-tight">
+          Tecnologia de ponta para<br>
+          <span class="text-gradient">soluções robustas</span>
+        </h2>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 stagger" id="expertiseCards">
+        <div class="glass rounded-2xl p-8 card-hover border border-border group">
+          <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-accent/20 to-accent-purple/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-accent">
+              <polyline points="16 18 22 12 16 6"></polyline>
+              <polyline points="8 6 2 12 8 18"></polyline>
+            </svg>
+          </div>
+          <h3 class="font-display text-xl font-semibold mb-3">Frontend Engineering</h3>
+          <p class="text-muted text-sm leading-relaxed">Interfaces rápidas, acessíveis e visualmente refinadas usando React, Next.js e TypeScript.</p>
+        </div>
+
+        <div class="glass rounded-2xl p-8 card-hover border border-border group">
+          <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-accent/20 to-accent-purple/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-accent">
+              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+              <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+              <line x1="6" y1="6" x2="6.01" y2="6"></line>
+              <line x1="6" y1="18" x2="6.01" y2="18"></line>
+            </svg>
+          </div>
+          <h3 class="font-display text-xl font-semibold mb-3">Backend & Arquitetura</h3>
+          <p class="text-muted text-sm leading-relaxed">Sistemas confiáveis com Node.js, Python, autenticação, APIs REST e boas práticas.</p>
+        </div>
+
+        <div class="glass rounded-2xl p-8 card-hover border border-border group">
+          <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-accent/20 to-accent-purple/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-accent">
+              <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+            </svg>
+          </div>
+          <h3 class="font-display text-xl font-semibold mb-3">Bancos de Dados</h3>
+          <p class="text-muted text-sm leading-relaxed">Modelagem eficiente e segura com PostgreSQL, MySQL e SQLite.</p>
+        </div>
+
+        <div class="glass rounded-2xl p-8 card-hover border border-border group">
+          <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-accent/20 to-accent-purple/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-accent">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 16v-4"></path>
+              <path d="M12 8h.01"></path>
+            </svg>
+          </div>
+          <h3 class="font-display text-xl font-semibold mb-3">UI/UX & Produto</h3>
+          <p class="text-muted text-sm leading-relaxed">Design orientado à experiência do usuário e objetivos de negócio — não apenas estética.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Packages Section -->
+  <section class="relative py-32 bg-bg-elevated overflow-hidden" id="pacotes">
+    <div class="absolute inset-0 pointer-events-none">
+      <div class="orb orb-2" style="top: 50%; right: -300px; transform: translateY(-50%);"></div>
+    </div>
+    
+    <div class="max-w-7xl mx-auto px-6 relative z-10">
+      <div class="reveal mb-20">
+        <p class="text-accent font-medium tracking-widest uppercase text-sm mb-4">Pacotes</p>
+        <h2 class="font-display text-4xl md:text-5xl font-bold tracking-tight">
+          Investimento<br>
+          <span class="text-gradient">transparente</span>
+        </h2>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 stagger" id="packageCards">
+        <!-- Bronze -->
+        <div class="glass rounded-2xl p-8 card-hover border border-border flex flex-col h-full">
+          <p class="text-muted text-sm uppercase tracking-widest mb-4">Bronze</p>
+          <h3 class="font-display text-2xl font-semibold mb-2">Landing Page Essencial</h3>
+          <p class="text-muted text-sm mb-6 flex-grow">Ideal para quem precisa marcar presença online com qualidade.</p>
+          <div class="mb-6">
+            <span class="text-sm text-muted">A partir de</span>
+            <p class="text-4xl font-display font-bold">R$ 500</p>
+          </div>
+          <a href="#contato" class="btn-secondary text-center text-sm mt-auto">Solicitar</a>
+        </div>
+
+        <!-- Prata -->
+        <div class="glass rounded-2xl p-8 card-hover border border-border flex flex-col h-full">
+          <p class="text-muted text-sm uppercase tracking-widest mb-4">Prata</p>
+          <h3 class="font-display text-2xl font-semibold mb-2">Landing Page Profissional</h3>
+          <p class="text-muted text-sm mb-6 flex-grow">Design exclusivo, foco em conversão e SEO básico.</p>
+          <div class="mb-6">
+            <span class="text-sm text-muted">A partir de</span>
+            <p class="text-4xl font-display font-bold">R$ 1.000</p>
+          </div>
+          <a href="#contato" class="btn-secondary text-center text-sm mt-auto">Solicitar</a>
+        </div>
+
+        <!-- Ouro - Destaque -->
+        <div class="relative rounded-2xl p-8 flex flex-col h-full bg-gradient-to-b from-accent/10 to-accent-purple/10 border border-accent/30">
+          <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-accent to-accent-purple text-bg text-xs font-semibold px-4 py-1.5 rounded-full whitespace-nowrap">
+            Mais Escolhido
+          </div>
+          <p class="text-accent text-sm uppercase tracking-widest mb-4 mt-2">Ouro</p>
+          <h3 class="font-display text-2xl font-semibold mb-2">Site Completo com Sistema</h3>
+          <p class="text-muted text-sm mb-6 flex-grow">Solução robusta com banco de dados, painel administrativo e autenticação.</p>
+          <div class="mb-6">
+            <span class="text-sm text-muted">A partir de</span>
+            <p class="text-4xl font-display font-bold text-gradient">R$ 2.500</p>
+          </div>
+          <a href="#contato" class="btn-primary text-center text-sm mt-auto"><span>Solicitar</span></a>
+        </div>
+
+        <!-- Platina -->
+        <div class="glass rounded-2xl p-8 card-hover border border-border flex flex-col h-full">
+          <p class="text-muted text-sm uppercase tracking-widest mb-4">Platina</p>
+          <h3 class="font-display text-2xl font-semibold mb-2">Sistema Web Avançado</h3>
+          <p class="text-muted text-sm mb-4 flex-grow">Projetos sob medida, integrações complexas e arquitetura escalável.</p>
+          <div class="mb-4">
+            <p class="text-3xl font-display font-bold">Sob consulta</p>
+          </div>
+          <p class="text-muted text-xs mb-6">Projetos Platina são desenvolvidos após análise técnica e alinhamento estratégico.</p>
+          <a href="#contato" class="btn-secondary text-center text-sm mt-auto">Consultar</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Diferenciais Section -->
+  <section class="relative py-32 overflow-hidden" id="diferenciais">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="reveal mb-16">
+        <p class="text-accent font-medium tracking-widest uppercase text-sm mb-4">Diferenciais</p>
+        <h2 class="font-display text-4xl md:text-5xl font-bold tracking-tight">
+          Qualidade em<br>
+          <span class="text-gradient">cada detalhe</span>
+        </h2>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-5 gap-8 stagger" id="diferenciaisItems">
+        <div class="text-center lg:text-left group">
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent/10 to-accent-purple/10 flex items-center justify-center mx-auto lg:mx-0 mb-4 group-hover:scale-110 transition-transform duration-300">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-accent">
+              <polyline points="16 18 22 12 16 6"></polyline>
+              <polyline points="8 6 2 12 8 18"></polyline>
+            </svg>
+          </div>
+          <h3 class="font-display text-lg font-semibold mb-2">Código Limpo</h3>
+          <p class="text-muted text-sm">Organizado e escalável</p>
+        </div>
+
+        <div class="text-center lg:text-left group">
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent/10 to-accent-purple/10 flex items-center justify-center mx-auto lg:mx-0 mb-4 group-hover:scale-110 transition-transform duration-300">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-accent">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="3" y1="9" x2="21" y2="9"></line>
+              <line x1="9" y1="21" x2="9" y2="9"></line>
+            </svg>
+          </div>
+          <h3 class="font-display text-lg font-semibold mb-2">Design Moderno</h3>
+          <p class="text-muted text-sm">Responsivo e profissional</p>
+        </div>
+
+        <div class="text-center lg:text-left group">
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent/10 to-accent-purple/10 flex items-center justify-center mx-auto lg:mx-0 mb-4 group-hover:scale-110 transition-transform duration-300">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-accent">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+            </svg>
+          </div>
+          <h3 class="font-display text-lg font-semibold mb-2">Alta Performance</h3>
+          <p class="text-muted text-sm">Acima da média</p>
+        </div>
+
+        <div class="text-center lg:text-left group">
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent/10 to-accent-purple/10 flex items-center justify-center mx-auto lg:mx-0 mb-4 group-hover:scale-110 transition-transform duration-300">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-accent">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </div>
+          <h3 class="font-display text-lg font-semibold mb-2">Comunicação Clara</h3>
+          <p class="text-muted text-sm">Objetiva e direta</p>
+        </div>
+
+        <div class="text-center lg:text-left group">
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-accent/10 to-accent-purple/10 flex items-center justify-center mx-auto lg:mx-0 mb-4 group-hover:scale-110 transition-transform duration-300">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-accent">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </div>
+          <h3 class="font-display text-lg font-semibold mb-2">Compromisso</h3>
+          <p class="text-muted text-sm">Prazos e qualidade</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Prova de Valor Section -->
+  <section class="relative py-32 bg-bg-elevated overflow-hidden" id="prova-valor">
+    <div class="max-w-4xl mx-auto px-6">
+      <div class="reveal">
+        <div class="text-center mb-16">
+          <p class="text-accent font-medium tracking-widest uppercase text-sm mb-4">Filosofia</p>
+          <h2 class="font-display text-4xl md:text-5xl font-bold tracking-tight">
+            Mais que código,<br>
+            <span class="text-gradient">longevidade</span>
+          </h2>
+        </div>
+
+        <div class="glass rounded-3xl p-10 md:p-16 border border-border mb-12">
+          <div class="space-y-8">
+            <div class="flex items-start gap-6">
+              <div class="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-accent">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
+              <div>
+                <p class="text-xl md:text-2xl font-light leading-relaxed text-fg/90">
+                  Trabalho com foco em <span class="font-medium text-fg">resultado</span>, <span class="font-medium text-fg">longevidade</span> e <span class="font-medium text-fg">manutenção fácil</span>.
+                </p>
+                <p class="text-muted mt-2">Menos retrabalho. Mais crescimento.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass rounded-2xl p-8 md:p-12 border border-border border-l-4 border-l-accent">
+          <p class="text-lg md:text-xl text-muted leading-relaxed">
+            Se você busca algo apenas <span class="text-fg font-medium">"barato"</span>, provavelmente não sou a melhor escolha.
+          </p>
+          <p class="text-xl md:text-2xl font-light text-fg mt-4">
+            Se busca <span class="text-gradient font-medium">qualidade real</span>, estamos alinhados.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Final Section -->
+  <section class="relative py-32 overflow-hidden" id="cta">
+    <div class="absolute inset-0 pointer-events-none">
+      <div class="orb orb-1" style="bottom: -200px; left: 50%; transform: translateX(-50%);"></div>
+    </div>
+
+    <div class="max-w-4xl mx-auto px-6 text-center relative z-10">
+      <div class="reveal">
+        <h2 class="font-display text-4xl md:text-6xl font-bold tracking-tight mb-6">
+          Vamos criar algo<br>
+          <span class="text-gradient">realmente excepcional?</span>
+        </h2>
+        <p class="text-lg md:text-xl text-muted mb-12 max-w-2xl mx-auto leading-relaxed">
+          Estou pronto para transformar sua ideia em um produto digital profissional, robusto e escalável.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+          <a href="https://wa.me/5531971836063" target="_blank" rel="noopener" class="btn-primary magnetic inline-flex items-center justify-center gap-3">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+            <span>Iniciar conversa no WhatsApp</span>
+          </a>
+          <a href="mailto:hugowenner5@gmail.com" class="btn-secondary magnetic inline-flex items-center justify-center gap-3">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+            Enviar e-mail
+          </a>
+        </div>
+        <div class="flex items-center justify-center gap-2 text-sm text-muted">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-accent">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+          </svg>
+          <span>Respondo em até <span class="text-fg font-medium">2 horas</span> durante horário comercial.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact Section -->
+  <section class="relative py-20 bg-bg-elevated" id="contato">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="reveal">
+        <div class="glass rounded-3xl p-8 md:p-12 border border-border">
+          <div class="grid md:grid-cols-2 gap-12">
+            <div>
+              <p class="text-accent font-medium tracking-widest uppercase text-sm mb-4">Contato</p>
+              <h2 class="font-display text-3xl md:text-4xl font-bold tracking-tight mb-6">
+                Pronto para<br>
+                <span class="text-gradient">começar?</span>
+              </h2>
+              <p class="text-muted mb-8">
+                Entre em contato para discutir seu projeto.
+              </p>
+              <div class="space-y-4">
+                <a href="https://wa.me/5531971836063" target="_blank" rel="noopener" class="flex items-center gap-4 text-fg hover:text-accent transition-colors group">
+                  <div class="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="text-accent">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-sm text-muted">WhatsApp</p>
+                    <p class="font-medium">(31) 97183-6063</p>
+                  </div>
+                </a>
+                <a href="mailto:hugowenner5@gmail.com" class="flex items-center gap-4 text-fg hover:text-accent transition-colors group">
+                  <div class="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-accent">
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                      <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-sm text-muted">E-mail</p>
+                    <p class="font-medium">hugowenner5@gmail.com</p>
+                  </div>
+                </a>
+              </div>
+            </div>
+            <div class="flex items-center justify-center">
+              <div class="text-center">
+                <div class="w-32 h-32 rounded-full bg-gradient-to-br from-accent to-accent-purple flex items-center justify-center mx-auto mb-6">
+                  <span class="font-display text-5xl font-bold text-bg">HW</span>
+                </div>
+                <p class="font-display text-xl font-semibold">Hugo Enrique Wenner</p>
+                <p class="text-muted">Desenvolvedor Web Full Stack</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="relative py-12 border-t border-border">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="flex items-center gap-4">
+          <span class="font-display text-2xl font-bold text-gradient">HW</span>
+          <span class="text-muted hidden sm:inline">|</span>
+          <span class="text-sm text-muted hidden sm:inline">Hugo Enrique Wenner</span>
+        </div>
+        <p class="text-sm text-muted text-center">
+          2025 Hugo Wenner. Todos os direitos reservados.
+        </p>
+        <div class="flex items-center gap-3 text-sm text-muted">
+          <span>React</span>
+          <span class="w-1 h-1 rounded-full bg-muted"></span>
+          <span>Next.js</span>
+          <span class="w-1 h-1 rounded-full bg-muted"></span>
+          <span>TypeScript</span>
+          <span class="w-1 h-1 rounded-full bg-muted"></span>
+          <span>Tailwind</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize variables
+      const loader = document.getElementById('loader');
+      const navbar = document.getElementById('navbar');
+      const heroContent = document.getElementById('heroContent');
+      const menuBtn = document.getElementById('menuBtn');
+      const mobileMenu = document.getElementById('mobileMenu');
+      const canvas = document.getElementById('particles');
+      const ctx = canvas.getContext('2d');
+      
+      let particles = [];
+      let animationId = null;
+      let mouseX = 0;
+      let mouseY = 0;
+      
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // Loading Screen
+      setTimeout(() => {
+        if (loader) loader.classList.add('hidden');
+        if (heroContent) heroContent.classList.add('active');
+      }, 1500);
+
+      // Mobile menu
+      if (menuBtn && mobileMenu) {
+        menuBtn.addEventListener('click', () => {
+          mobileMenu.classList.toggle('hidden');
+        });
+      }
+
+      // Navbar scroll
+      window.addEventListener('scroll', () => {
+        if (navbar) {
+          navbar.style.background = window.pageYOffset > 100 
+            ? 'rgba(7, 7, 10, 0.95)' 
+            : 'rgba(255, 255, 255, 0.02)';
+        }
+      });
+
+      // Intersection Observer
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('active');
+          }
+        });
+      }, { threshold: 0.1 });
+
+      document.querySelectorAll('.reveal, .stagger').forEach(el => observer.observe(el));
+
+      // Particle System
+      function initParticles() {
+        if (!canvas || !ctx) return;
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        particles = [];
+        
+        const count = prefersReducedMotion ? 30 : Math.floor((canvas.width * canvas.height) / 18000);
+        
+        for (let i = 0; i < count; i++) {
+          particles.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            vx: (Math.random() - 0.5) * 0.25,
+            vy: (Math.random() - 0.5) * 0.25,
+            radius: Math.max(1, Math.random() * 2),
+            opacity: Math.random() * 0.4 + 0.15
+          });
+        }
+      }
+
+      function drawParticles() {
+        if (!canvas || !ctx) return;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        particles.forEach((p, i) => {
+          if (!prefersReducedMotion) {
+            p.x += p.vx;
+            p.y += p.vy;
+
+            const dx = mouseX - p.x;
+            const dy = mouseY - p.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < 180) {
+              p.x -= dx * 0.008;
+              p.y -= dy * 0.008;
+            }
+
+            if (p.x < 0) p.x = canvas.width;
+            if (p.x > canvas.width) p.x = 0;
+            if (p.y < 0) p.y = canvas.height;
+            if (p.y > canvas.height) p.y = 0;
+          }
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, Math.max(0.5, p.radius), 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(0, 212, 255, ' + p.opacity + ')';
+          ctx.fill();
+
+          if (!prefersReducedMotion) {
+            particles.forEach((p2, j) => {
+              if (i === j) return;
+              const dx2 = p.x - p2.x;
+              const dy2 = p.y - p2.y;
+              const dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+              
+              if (dist2 < 100) {
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.strokeStyle = 'rgba(0, 212, 255, ' + (0.08 * (1 - dist2 / 100)) + ')';
+                ctx.stroke();
+              }
+            });
+          }
+        });
+
+        animationId = requestAnimationFrame(drawParticles);
+      }
+
+      initParticles();
+      if (!prefersReducedMotion) drawParticles();
+
+      document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+      });
+
+      window.addEventListener('resize', () => {
+        if (animationId) cancelAnimationFrame(animationId);
+        initParticles();
+        if (!prefersReducedMotion) drawParticles();
+      });
+
+      // Magnetic effect
+      document.querySelectorAll('.magnetic').forEach(btn => {
+        btn.addEventListener('mousemove', (e) => {
+          if (prefersReducedMotion) return;
+          const rect = btn.getBoundingClientRect();
+          const x = e.clientX - rect.left - rect.width / 2;
+          const y = e.clientY - rect.top - rect.height / 2;
+          btn.style.transform = 'translate(' + (x * 0.15) + 'px, ' + (y * 0.15) + 'px)';
+        });
+
+        btn.addEventListener('mouseleave', () => {
+          btn.style.transform = '';
+        });
+      });
+
+      // Smooth scroll
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+          e.preventDefault();
+          const target = document.querySelector(this.getAttribute('href'));
+          if (target) {
+            target.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+            if (mobileMenu) mobileMenu.classList.add('hidden');
+          }
+        });
+      });
+
+      // Parallax
+      if (!prefersReducedMotion) {
+        window.addEventListener('scroll', () => {
+          const scrollY = window.pageYOffset;
+          document.querySelectorAll('.orb').forEach((orb, i) => {
+            orb.style.transform = 'translateY(' + (scrollY * (i === 0 ? 0.04 : 0.03)) + 'px)';
+          });
+        });
+      }
+    });
+  </script>
+</body>
+</html>
